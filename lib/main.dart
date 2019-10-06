@@ -1,4 +1,7 @@
+import 'package:calculadora_imc/pessoa.dart';
 import 'package:flutter/material.dart';
+
+enum SingingCharacter { masculino, feminino }
 
 void main() => runApp(
       MaterialApp(
@@ -15,9 +18,15 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  SingingCharacter _character = SingingCharacter.masculino;
+
   TextEditingController _weightController = TextEditingController();
   TextEditingController _heightController = TextEditingController();
-  String _result;
+  String result;
+  double weight, height;
+  String sexo;
+
+  var pessoa = Pessoa();
 
   @override
   void initState() {
@@ -29,7 +38,9 @@ class _HomeState extends State<Home> {
     _weightController.text = '';
     _heightController.text = '';
     setState(() {
-      _result = 'Informe seus dados';
+      pessoa.result = 'Informe seus dados';
+      pessoa.cor = Colors.black;
+      _character = SingingCharacter.masculino;
     });
   }
 
@@ -45,7 +56,7 @@ class _HomeState extends State<Home> {
   AppBar buildAppBar() {
     return AppBar(
       title: Text('Calculadora de IMC'),
-      backgroundColor: Colors.blue,
+      backgroundColor: Colors.red,
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.refresh),
@@ -63,6 +74,30 @@ class _HomeState extends State<Home> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          ListTile(
+            title: const Text('Masculino'),
+            leading: Radio(
+              value: SingingCharacter.masculino,
+              groupValue: _character,
+              onChanged: (SingingCharacter value) {
+                setState(() {
+                  _character = value;
+                });
+              },
+            ),
+          ),
+          ListTile(
+            title: const Text('Feminino'),
+            leading: Radio(
+              value: SingingCharacter.feminino,
+              groupValue: _character,
+              onChanged: (SingingCharacter value) {
+                setState(() {
+                  _character = value;
+                });
+              },
+            ),
+          ),
           buildTextFormField(
               label: "Peso (kg)",
               error: "Insira seu peso!",
@@ -78,35 +113,18 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void calculateImc() {
-    double weight = double.parse(_weightController.text);
-    double height = double.parse(_heightController.text) / 100.0;
-    double imc = weight / (height * height);
-
-    setState(() {
-      _result = "IMC = ${imc.toStringAsPrecision(2)}\n";
-      if (imc < 18.6)
-        _result += "Abaixo do peso";
-      else if (imc < 25.0)
-        _result += "Peso ideal";
-      else if (imc < 30.0)
-        _result += "Levemente acima do peso";
-      else if (imc < 35.0)
-        _result += "Obesidade Grau I";
-      else if (imc < 40.0)
-        _result += "Obesidade Grau II";
-      else
-        _result += "Obesidade Grau IIII";
-    });
-  }
-
   Widget buildCalculateButton() {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 36.0),
       child: RaisedButton(
+        color: Colors.red,
         onPressed: () {
           if (_formKey.currentState.validate()) {
-            calculateImc();
+            setState(() {
+              setVariable();
+              pessoa = Pessoa(weight: weight, height: height, sexo: sexo);
+              pessoa.calculateImc();
+            });
           }
         },
         child: Text('CALCULAR', style: TextStyle(color: Colors.white)),
@@ -118,8 +136,13 @@ class _HomeState extends State<Home> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 36.0),
       child: Text(
-        _result,
+        pessoa.result ?? '',
         textAlign: TextAlign.center,
+        style: TextStyle(
+          color: pessoa.cor,
+          fontSize: 30,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -134,5 +157,15 @@ class _HomeState extends State<Home> {
         return text.isEmpty ? error : null;
       },
     );
+  }
+
+  void setVariable() {
+    weight = double.parse(_weightController.text);
+    height = double.parse(_heightController.text) / 100.0;
+
+    if (_character == SingingCharacter.masculino)
+      sexo = "masculino";
+    else
+      sexo = "feminino";
   }
 }
